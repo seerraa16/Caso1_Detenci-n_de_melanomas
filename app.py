@@ -3,11 +3,12 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from PIL import Image
+import base64
 
 # ----------------------------
 # Parámetros
 # ----------------------------
-img_height, img_width = 224, 224  # usa los mismos del entrenamiento
+img_height, img_width = 224, 224  # usar los mismos del entrenamiento
 class_names = ["Benigno", "Maligno"]
 
 # ----------------------------
@@ -22,7 +23,7 @@ def apply_heatmap_safe(img_array):
     return heatmap
 
 # ----------------------------
-# Función para preprocesar
+# Funciones de preprocesado
 # ----------------------------
 def preprocess_image(image):
     img = np.array(image)
@@ -30,9 +31,6 @@ def preprocess_image(image):
     img_array = np.expand_dims(img_resized / 255.0, axis=0)
     return img_array
 
-# ----------------------------
-# Función para preprocesar con heatmap
-# ----------------------------
 def preprocess_image_heatmap(image):
     img_array = preprocess_image(image)
     heatmap_img = apply_heatmap_safe(img_array[0])
@@ -44,40 +42,72 @@ def preprocess_image_heatmap(image):
 # ----------------------------
 model = tf.keras.models.load_model("modelo_cnn.h5")
 
-st.title("🔎 Clasificador de melanomas con CNN + Heatmap")
+# ----------------------------
+# Cambiar fondo con CSS
+# ----------------------------
+def set_background_image(image_path):
+    with open(image_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
+    css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{encoded}");
+        background-size: cover;
+        background-position: center;
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+set_background_image(r"C:\Users\aserr\Downloads\FondoWeb.jpg")
 
 # ----------------------------
-# Subir imagen
+# Título
 # ----------------------------
-uploaded_file = st.file_uploader("Sube una imagen", type=["jpg","jpeg","png"])
+st.markdown("<h1 style='text-align:center; font-weight:bold; color:#FF0000;'>CLASIFICADOR DE MELANOMAS</h1>", unsafe_allow_html=True)
+st.write("---")
+
+# ----------------------------
+# Subida de imagen
+# ----------------------------
+uploaded_file = st.file_uploader("📂 Suba la imagen que quiera analizar.", type=["jpg","jpeg","png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
+    
     st.image(image, caption="Imagen cargada", use_container_width=True)
-
+    
     # Preprocesar imagen normal
     img_array = preprocess_image(image)
-    pred_normal = model.predict(img_array)[0][0]
+    pred_normal = float(model.predict(img_array)[0][0])
     label_normal = class_names[int(pred_normal > 0.4)]
 
     # Preprocesar imagen con heatmap
     img_heatmap = preprocess_image_heatmap(image)
-    pred_heatmap = model.predict(img_heatmap)[0][0]
+    pred_heatmap = float(model.predict(img_heatmap)[0][0])
     label_heatmap = class_names[int(pred_heatmap > 0.4)]
+    
+    # Mostrar resultados en columnas
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 📈 Predicción con imagen normal")
+        st.progress(pred_normal)
+        st.write(f"✅ Clase: **{label_normal}**")
+        st.write(f"Probabilidad: {pred_normal:.2f}")
+    
+    with col2:
+        st.markdown("### 🌡️ Predicción con imagen heatmap")
+        st.image(img_heatmap[0], caption="Imagen heatmap", use_container_width=True)
+        st.progress(pred_heatmap)
+        st.write(f"✅ Clase: **{label_heatmap}**")
+        st.write(f"Probabilidad: {pred_heatmap:.2f}")
 
-    # Mostrar resultados
-    st.write("### Predicción con imagen normal")
-    st.write(f"✅ Clase: **{label_normal}**")
-    st.write(f"Probabilidad: {pred_normal:.2f}")
-
-    st.write("### Predicción con imagen en heatmap")
-    st.image(img_heatmap[0])  # muestra la versión heatmap
-    st.write(f"✅ Clase: **{label_heatmap}**")
-    st.write(f"Probabilidad: {pred_heatmap:.2f}")
-
-    # Opcional: combinación simple
+    # Predicción combinada
     combined_prob = (pred_normal + pred_heatmap) / 2
     combined_label = class_names[int(combined_prob > 0.4)]
-    st.write("### Predicción combinada (normal + heatmap)")
+    st.write("---")
+    st.markdown("### 🔹 Predicción combinada (normal + heatmap)")
+    st.progress(combined_prob)
     st.write(f"✅ Clase final: **{combined_label}**")
     st.write(f"Probabilidad combinada: {combined_prob:.2f}")
