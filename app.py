@@ -8,11 +8,11 @@ import base64
 # ----------------------------
 # Parámetros
 # ----------------------------
-img_height, img_width = 224, 224  # usar los mismos del entrenamiento
+img_height, img_width = 224, 224
 class_names = ["Benigno", "Maligno"]
 
 # ----------------------------
-# Función para generar heatmap
+# Funciones de preprocesado
 # ----------------------------
 def apply_heatmap_safe(img_array):
     img = (img_array * 255).astype('uint8')
@@ -22,9 +22,6 @@ def apply_heatmap_safe(img_array):
     heatmap = heatmap.astype('float32') / 255.0
     return heatmap
 
-# ----------------------------
-# Funciones de preprocesado
-# ----------------------------
 def preprocess_image(image):
     img = np.array(image)
     img_resized = cv2.resize(img, (img_width, img_height))
@@ -43,7 +40,7 @@ def preprocess_image_heatmap(image):
 model = tf.keras.models.load_model("modelo_cnn.h5")
 
 # ----------------------------
-# Cambiar fondo con CSS
+# Fondo de la app
 # ----------------------------
 def set_background_image(image_path):
     with open(image_path, "rb") as f:
@@ -54,6 +51,12 @@ def set_background_image(image_path):
         background-image: url("data:image/jpg;base64,{encoded}");
         background-size: cover;
         background-position: center;
+    }}
+    .bubble {{
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 10px;
     }}
     </style>
     """
@@ -74,40 +77,49 @@ uploaded_file = st.file_uploader("📂 Suba la imagen que quiera analizar.", typ
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    
     st.image(image, caption="Imagen cargada", use_container_width=True)
     
-    # Preprocesar imagen normal
+    # Preprocesar
     img_array = preprocess_image(image)
     pred_normal = float(model.predict(img_array)[0][0])
     label_normal = class_names[int(pred_normal > 0.4)]
 
-    # Preprocesar imagen con heatmap
     img_heatmap = preprocess_image_heatmap(image)
     pred_heatmap = float(model.predict(img_heatmap)[0][0])
     label_heatmap = class_names[int(pred_heatmap > 0.4)]
-    
-    # Mostrar resultados en columnas
+
+    # Columnas para mostrar resultados
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 📈 Predicción con imagen normal")
+        st.markdown(f"""
+        <div class="bubble">
+        <h3>📈 Predicción Imagen Normal</h3>
+        <p>✅ Clase: <b>{label_normal}</b></p>
+        <p>Probabilidad: {pred_normal:.2f}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.progress(pred_normal)
-        st.write(f"✅ Clase: **{label_normal}**")
-        st.write(f"Probabilidad: {pred_normal:.2f}")
-    
+
     with col2:
-        st.markdown("### 🌡️ Predicción con imagen heatmap")
-        st.image(img_heatmap[0], caption="Imagen heatmap", use_container_width=True)
+        st.markdown(f"""
+        <div class="bubble">
+        <h3>🌡️ Predicción Imagen Heatmap</h3>
+        <img src="data:image/png;base64,{base64.b64encode(cv2.imencode('.png', (img_heatmap[0]*255).astype(np.uint8))[1]).decode()}" style="width:100%;">
+        <p>✅ Clase: <b>{label_heatmap}</b></p>
+        <p>Probabilidad: {pred_heatmap:.2f}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.progress(pred_heatmap)
-        st.write(f"✅ Clase: **{label_heatmap}**")
-        st.write(f"Probabilidad: {pred_heatmap:.2f}")
 
     # Predicción combinada
     combined_prob = (pred_normal + pred_heatmap) / 2
     combined_label = class_names[int(combined_prob > 0.4)]
-    st.write("---")
-    st.markdown("### 🔹 Predicción combinada (normal + heatmap)")
+    st.markdown(f"""
+    <div class="bubble">
+    <h3>🔹 Predicción Combinada</h3>
+    <p>✅ Clase final: <b>{combined_label}</b></p>
+    <p>Probabilidad combinada: {combined_prob:.2f}</p>
+    </div>
+    """, unsafe_allow_html=True)
     st.progress(combined_prob)
-    st.write(f"✅ Clase final: **{combined_label}**")
-    st.write(f"Probabilidad combinada: {combined_prob:.2f}")
