@@ -65,15 +65,27 @@ def set_background_image(image_path):
 set_background_image(r"C:\Users\aserr\Downloads\FondoWeb.jpg")
 
 # ----------------------------
-# Título
+# Título mejorado
 # ----------------------------
-st.markdown("<h1 style='text-align:center; font-weight:bold; color:#FF0000;'>CLASIFICADOR DE MELANOMAS</h1>", unsafe_allow_html=True)
+st.markdown("""
+<h1 style="
+    text-align: center;
+    font-weight: bold;
+    font-size: 60px;
+    color: #FFD700;
+    text-shadow: 2px 2px 8px #000000;
+    margin-bottom: 50px;
+">
+DETECTOR AVANZADO DE MELANOMAS
+</h1>
+""", unsafe_allow_html=True)
+
 st.write("---")
 
 # ----------------------------
 # Subida de imagen
 # ----------------------------
-uploaded_file = st.file_uploader("📂 Suba la imagen que quiera analizar.", type=["jpg","jpeg","png"])
+uploaded_file = st.file_uploader("Suba la imagen que quiera analizar.", type=["jpg","jpeg","png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
@@ -94,8 +106,8 @@ if uploaded_file is not None:
     with col1:
         st.markdown(f"""
         <div class="bubble">
-        <h3>📈 Predicción Imagen Normal</h3>
-        <p>✅ Clase: <b>{label_normal}</b></p>
+        <h3>Predicción Imagen Normal</h3>
+        <p>Clase: <b>{label_normal}</b></p>
         <p>Probabilidad: {pred_normal:.2f}</p>
         </div>
         """, unsafe_allow_html=True)
@@ -104,22 +116,41 @@ if uploaded_file is not None:
     with col2:
         st.markdown(f"""
         <div class="bubble">
-        <h3>🌡️ Predicción Imagen Heatmap</h3>
+        <h3> Predicción Imagen con mapa de calor</h3>
         <img src="data:image/png;base64,{base64.b64encode(cv2.imencode('.png', (img_heatmap[0]*255).astype(np.uint8))[1]).decode()}" style="width:100%;">
-        <p>✅ Clase: <b>{label_heatmap}</b></p>
+        <p> Clase: <b>{label_heatmap}</b></p>
         <p>Probabilidad: {pred_heatmap:.2f}</p>
         </div>
         """, unsafe_allow_html=True)
         st.progress(pred_heatmap)
 
+    # ----------------------------
     # Predicción combinada
+    # ----------------------------
     combined_prob = (pred_normal + pred_heatmap) / 2
     combined_label = class_names[int(combined_prob > 0.4)]
     st.markdown(f"""
     <div class="bubble">
-    <h3>🔹 Predicción Combinada</h3>
-    <p>✅ Clase final: <b>{combined_label}</b></p>
+    <h3> Predicción Combinada</h3>
+    <p>Clase final: <b>{combined_label}</b></p>
     <p>Probabilidad combinada: {combined_prob:.2f}</p>
     </div>
     """, unsafe_allow_html=True)
     st.progress(combined_prob)
+
+    # ----------------------------
+    # Mensaje interpretativo educado
+    # ----------------------------
+    if combined_prob <= 0.4:
+        advice = "No parece haber indicios preocupantes. Mantén tu seguimiento habitual."
+    elif combined_prob <= 0.6:
+        advice = "Se recomienda consultar con un profesional para un examen más detallado."
+    else:
+        advice = "Hay indicios que podrían ser preocupantes. Se aconseja acudir al médico cuanto antes."
+
+    st.markdown(f"""
+    <div class="bubble">
+    <h3>Interpretación</h3>
+    <p>{advice}</p>
+    </div>
+    """, unsafe_allow_html=True)
