@@ -37,7 +37,7 @@ def preprocess_image_heatmap(image):
 # ----------------------------
 # Cargar modelo
 # ----------------------------
-model = tf.keras.models.load_model("modelo_cnn.h5")
+model = tf.keras.models.load_model("models/modelo_cnn.h5")
 
 # ----------------------------
 # Fondo de la app
