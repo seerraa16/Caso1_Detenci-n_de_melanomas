@@ -37,7 +37,28 @@ def preprocess_image_heatmap(image):
 # ----------------------------
 # Cargar modelo
 # ----------------------------
-model = tf.keras.models.load_model("models/modelo4_cnn.h5")
+import requests, tempfile, streamlit as st
+
+# ----------------------------
+# Descargar modelo desde Google Drive
+# ----------------------------
+@st.cache_resource
+def load_model_from_drive(file_id):
+    """Descarga el modelo desde Google Drive y lo carga en memoria."""
+    with st.spinner("Descargando modelo desde Google Drive..."):
+        url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        response = requests.get(url)
+        response.raise_for_status()
+        tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".h5").name
+        with open(tmp_path, "wb") as f:
+            f.write(response.content)
+        model = tf.keras.models.load_model(tmp_path)
+    st.success("Modelo cargado correctamente ✅")
+    return model
+
+# ⚠️ Pega aquí tu ID de Google Drive:
+FILE_ID = "1LmC1kpOCDmPOYEPmEGge2IQ2GIbhZ78k"
+model = load_model_from_drive(FILE_ID)
 
 # ----------------------------
 # Fondo de la app
