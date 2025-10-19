@@ -4,6 +4,9 @@ import numpy as np
 import cv2
 from PIL import Image
 import base64
+import gdown
+import tempfile
+import requests
 
 # ----------------------------
 # Parámetros
@@ -35,29 +38,27 @@ def preprocess_image_heatmap(image):
     return heatmap_array
 
 # ----------------------------
-# Cargar modelo
-# ----------------------------
-import requests, tempfile, streamlit as st
-
-# ----------------------------
-# Descargar modelo desde Google Drive
+# Descargar y cargar modelo desde Google Drive (CORREGIDO)
 # ----------------------------
 @st.cache_resource
 def load_model_from_drive(file_id):
-    """Descarga el modelo desde Google Drive y lo carga en memoria."""
+    """Descarga el modelo desde Google Drive y lo carga correctamente."""
     with st.spinner("Descargando modelo desde Google Drive..."):
-        url = f"https://drive.google.com/uc?export=download&id={file_id}"
-        response = requests.get(url)
-        response.raise_for_status()
+        # Enlace de descarga directa
+        url = f"https://drive.google.com/uc?id={file_id}"
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".h5").name
-        with open(tmp_path, "wb") as f:
-            f.write(response.content)
+        
+        # Descargar el archivo .h5 real
+        gdown.download(url, tmp_path, quiet=False)
+        
+        # Cargar el modelo
         model = tf.keras.models.load_model(tmp_path)
+    
     st.success("Modelo cargado correctamente ✅")
     return model
 
-# ⚠️ Pega aquí tu ID de Google Drive:
-FILE_ID = "1LmC1kpOCDmPOYEPmEGge2IQ2GIbhZ78k"
+# ⚠️ ID de tu archivo de modelo en Google Drive
+FILE_ID = "1EMDeb0ZeAtXQegeFxEeNE7wCfj5k7PO9"
 model = load_model_from_drive(FILE_ID)
 
 # ----------------------------
@@ -112,11 +113,12 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Imagen cargada", use_container_width=True)
     
-    # Preprocesar
+    # Preprocesar imagen normal
     img_array = preprocess_image(image)
     pred_normal = float(model.predict(img_array)[0][0])
     label_normal = class_names[int(pred_normal > 0.4)]
 
+    # Preprocesar imagen con mapa de calor
     img_heatmap = preprocess_image_heatmap(image)
     pred_heatmap = float(model.predict(img_heatmap)[0][0])
     label_heatmap = class_names[int(pred_heatmap > 0.4)]
@@ -137,9 +139,9 @@ if uploaded_file is not None:
     with col2:
         st.markdown(f"""
         <div class="bubble">
-        <h3> Predicción Imagen con mapa de calor</h3>
+        <h3>Predicción Imagen con mapa de calor</h3>
         <img src="data:image/png;base64,{base64.b64encode(cv2.imencode('.png', (img_heatmap[0]*255).astype(np.uint8))[1]).decode()}" style="width:100%;">
-        <p> Clase: <b>{label_heatmap}</b></p>
+        <p>Clase: <b>{label_heatmap}</b></p>
         <p>Probabilidad: {pred_heatmap:.2f}</p>
         </div>
         """, unsafe_allow_html=True)
@@ -152,7 +154,7 @@ if uploaded_file is not None:
     combined_label = class_names[int(combined_prob > 0.4)]
     st.markdown(f"""
     <div class="bubble">
-    <h3> Predicción Combinada</h3>
+    <h3>Predicción Combinada</h3>
     <p>Clase final: <b>{combined_label}</b></p>
     <p>Probabilidad combinada: {combined_prob:.2f}</p>
     </div>
