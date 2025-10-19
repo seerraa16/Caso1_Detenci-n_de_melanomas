@@ -38,35 +38,32 @@ def preprocess_image_heatmap(image):
     return heatmap_array
 
 # ----------------------------
-# Descargar y cargar modelo desde Google Drive (CORREGIDO)
+# Descargar y cargar modelo desde Google Drive
 # ----------------------------
 @st.cache_resource
 def load_model_from_drive(file_id):
     """Descarga el modelo desde Google Drive y lo carga correctamente."""
     with st.spinner("Descargando modelo desde Google Drive..."):
-        # Enlace de descarga directa
         url = f"https://drive.google.com/uc?id={file_id}"
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".h5").name
-        
-        # Descargar el archivo .h5 real
         gdown.download(url, tmp_path, quiet=False)
-        
-        # Cargar el modelo
         model = tf.keras.models.load_model(tmp_path)
-    
     st.success("Modelo cargado correctamente ✅")
     return model
 
-# ⚠️ ID de tu archivo de modelo en Google Drive
+# ⚠️ ID de tu archivo .h5 en Google Drive
 FILE_ID = "1EMDeb0ZeAtXQegeFxEeNE7wCfj5k7PO9"
 model = load_model_from_drive(FILE_ID)
 
 # ----------------------------
-# Fondo de la app
+# Fondo de la app (desde Google Drive)
 # ----------------------------
-def set_background_image(image_path):
-    with open(image_path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
+def set_background_image_from_drive(file_id):
+    """Descarga una imagen desde Google Drive y la aplica como fondo."""
+    url = f"https://drive.google.com/uc?id={file_id}"
+    response = requests.get(url)
+    response.raise_for_status()
+    encoded = base64.b64encode(response.content).decode()
     css = f"""
     <style>
     .stApp {{
@@ -84,10 +81,12 @@ def set_background_image(image_path):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-set_background_image(r"C:\Users\aserr\Downloads\FondoWeb.jpg")
+# ⚠️ Sustituye por el ID de tu imagen de fondo en Google Drive
+BACKGROUND_ID = "1sBPeHxj2AZoRtq0blyOY_fBdmIFRYRDP"
+set_background_image_from_drive(BACKGROUND_ID)
 
 # ----------------------------
-# Título mejorado
+# Título principal
 # ----------------------------
 st.markdown("""
 <h1 style="
