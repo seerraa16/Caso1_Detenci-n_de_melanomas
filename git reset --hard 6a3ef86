@@ -1,0 +1,19 @@
+[33mead2985[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m w
+[33m5e84267[m A ver si se sube el modelo
+[33m6a3ef86[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m App.py
+[33m86f02ec[m Ajustes para streamlit
+[33m5d20e5d[m .
+[33m656d22f[m .
+[33mb4434d9[m Add .gitignore and Poetry setup for TensorFlow & PyTorch with GPU test
+[33m5ee7498[m Add h5 files to gitignore to prevent large file uploads
+[33mce096a5[m Add CNN model with LFS
+[33mf3b9056[m hora funionará?
+[33mcf0243b[m funcionará?
+[33m36688b7[m Acabado
+[33mf6bac26[m Ahora si
+[33mc6c5a36[m Merge branch 'main' of https://github.com/seerraa16/Caso1_Detenci-n_de_melanomas
+[33m8a4f2d9[m Cositas
+[33me02147e[m Chill de momento
+[33m0d096ff[m Added Dev Container Folder
+[33m63be746[m Chill
+[33mb1928bc[m Initial commit
